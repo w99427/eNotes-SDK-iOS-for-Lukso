@@ -7,22 +7,21 @@
 
 ## Example
 
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
+To run the example project, download the code and replace your team configure, you must open NFC support
 
 ## Requirements
 
+- iOS 13.0+
+- Xcode 11+
+- Swift 4.2+
+
 ## Installation
 
-eNotesSDKLukso is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
-
-```ruby
-pod 'eNotesSDKLukso'
-```
+Upcoming, eNotesSDKLukso will be available through [CocoaPods](https://cocoapods.org).
 
 ## Author
 
-Smiacter, Smiacter@gmail.com
+eNotes
 
 ## License
 
