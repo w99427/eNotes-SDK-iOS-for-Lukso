@@ -79,28 +79,15 @@ public enum CardReaderError {
 /// verifyBlockchain: public key get from send 'publicKey' command(public key -> blockchain private key)
 /// signPrivateKey: use transaction info(has been hashed) and private key(stored in device, nobody kown) to sign to get final transaction data
 public enum Apdu: Equatable {
-    case none
-    case aid
-    case version
     case publicKey
     case cardStatus
     case certificate(String)
     case verifyDevice
     case verifyBlockchain
     case signPrivateKey
-    case freezeStatus
-    case unfreezeLeftCount
-    case freeze
-    case unfreeze
     
     var value: String {
         switch self {
-        case .none:
-            return ""
-        case .aid:
-            return "00A404000C654e6f7465734170706c6574"
-        case .version:
-            return "00CA0012"
         case .publicKey:
             return "00CA0055"
         case .certificate(let p1):
@@ -113,28 +100,50 @@ public enum Apdu: Equatable {
             return "0088540022"
         case .signPrivateKey:
             return "00A0540022"
-        case .freezeStatus:
-            return "00CA0094"
-        case .unfreezeLeftCount:
-            return "00CA0095"
-        case .freeze:
-            return "0028940008"
-        case .unfreeze:
-            return "0026940008"
         }
     }
 }
 
-public enum FreezeResult {
-    case success
-    case wrongFreezePin
-    case frozenAlready
+public struct Card {
+    // readed card info by asn1 decoder
+    public var tbsCertificateAndSig = Data()
+    public var tbsCertificate = Data()
+    public var issuer = ""
+    public var issueTime = Date()
+    public var deno = 0
+    public var blockchain: Blockchain = .bitcoin
+    public var network: Network = .testnet
+    public var contract: String?
+    public var publicKey = ""
+    public var serialNumber = ""
+    public var manufactureBatch = ""
+    public var manufactureTime = Date()
+    public var r = ""
+    public var s = ""
+    // custom info
+    public var address = ""
+    public var isSafe = true
+    public var publicKeyData: Data?
+    public var isFrozen: Bool?
+    // ERC20 token info
+    public var name: String?
+    public var symbol: String?
+    public var decimals = 0
+    
+    public init() {}
 }
 
-public enum CardConnecetStatus {
-    case connected
-    case disconnected
-    case absent
-    case progress
-    case error
+/// card type, we support btc and eth for now
+public enum Blockchain: Int {
+    case bitcoin
+    case ethereum
+}
+
+public enum Network: Int {
+    case mainnet
+    case testnet
+    case ethereum
+    case kovan
+    case ropsten
+    case rinkeby
 }
