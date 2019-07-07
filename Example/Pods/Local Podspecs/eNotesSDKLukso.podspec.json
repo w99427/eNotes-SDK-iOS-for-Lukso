@@ -1,0 +1,49 @@
+{
+  "name": "eNotesSDKLukso",
+  "version": "0.1.0",
+  "summary": "eNotes, a negotiable private key",
+  "description": "eNotesSDK, provide an esay way to use blockchain",
+  "homepage": "https://github.com/Smiacter/eNotesSDKLukso",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "Smiacter": "Smiacter@gmail.com"
+  },
+  "source": {
+    "git": "https://github.com/Smiacter/eNotesSDKLukso.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "13.0"
+  },
+  "swift_versions": "4.2",
+  "source_files": [
+    "eNotesSDKLukso/Classes/**/*.{swift}",
+    "eNotesSDKLukso/Classes/Dependency/ACSBluetooth/*.{h,m}",
+    "eNotesSDKLukso/Classes/Dependency/CoreBitcoin/**/*.{h,m}",
+    "eNotesSDKLukso/Classes/Helper/BtcRawTx/*.{h,m}"
+  ],
+  "vendored_libraries": "eNotesSDKLukso/Classes/Dependency/**/*.a",
+  "vendored_frameworks": "eNotesSDKLukso/Classes/Dependency/**/*.framework",
+  "frameworks": "AVFoundation",
+  "pod_target_xcconfig": {
+    "OTHER_LDFLAGS": "-lObjC"
+  },
+  "dependencies": {
+    "SolarNetwork": [
+
+    ],
+    "BigInt": [
+
+    ],
+    "CryptoSwift": [
+
+    ]
+  },
+  "xcconfig": {
+    "ENABLE_BITCODE": "NO"
+  },
+  "swift_version": "4.2"
+}

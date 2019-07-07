@@ -1,0 +1,6 @@
+framework module eNotesSDKLukso {
+  umbrella header "eNotesSDKLukso-umbrella.h"
+
+  export *
+  module * { export * }
+}
