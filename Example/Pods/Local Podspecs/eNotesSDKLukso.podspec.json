@@ -32,9 +32,6 @@
     "OTHER_LDFLAGS": "-lObjC"
   },
   "dependencies": {
-    "SolarNetwork": [
-
-    ],
     "BigInt": [
 
     ],

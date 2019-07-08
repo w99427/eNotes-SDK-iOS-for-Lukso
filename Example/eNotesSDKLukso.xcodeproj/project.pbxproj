@@ -46,7 +46,7 @@
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		644346B319D124F57AAC07EA /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
-		828F84FE39F0EDAF2383E6C3 /* eNotesSDKLukso.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = eNotesSDKLukso.podspec; path = ../eNotesSDKLukso.podspec; sourceTree = "<group>"; };
+		828F84FE39F0EDAF2383E6C3 /* eNotesSDKLukso.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = eNotesSDKLukso.podspec; path = ../eNotesSDKLukso.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		8FDA9231B32B6DFDF9C4B769 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		B9F37A67EC1FFC8F9F5FB254 /* Pods-eNotesSDKLukso_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-eNotesSDKLukso_Tests.debug.xcconfig"; path = "Target Support Files/Pods-eNotesSDKLukso_Tests/Pods-eNotesSDKLukso_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		E5E5E8313052D8267BD988B9 /* Pods_eNotesSDKLukso_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_eNotesSDKLukso_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -276,18 +276,14 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-eNotesSDKLukso_Example/Pods-eNotesSDKLukso_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
 				"${BUILT_PRODUCTS_DIR}/BigInt/BigInt.framework",
 				"${BUILT_PRODUCTS_DIR}/CryptoSwift/CryptoSwift.framework",
-				"${BUILT_PRODUCTS_DIR}/SolarNetwork/SolarNetwork.framework",
 				"${BUILT_PRODUCTS_DIR}/eNotesSDKLukso/eNotesSDKLukso.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BigInt.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/CryptoSwift.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SolarNetwork.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/eNotesSDKLukso.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;

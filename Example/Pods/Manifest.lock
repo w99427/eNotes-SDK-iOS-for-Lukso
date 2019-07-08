@@ -1,34 +1,26 @@
 PODS:
-  - Alamofire (4.8.2)
   - BigInt (4.0.0)
   - CryptoSwift (1.0.0)
   - eNotesSDKLukso (0.1.0):
     - BigInt
     - CryptoSwift
-    - SolarNetwork
-  - SolarNetwork (1.2.0):
-    - Alamofire
 
 DEPENDENCIES:
   - eNotesSDKLukso (from `../`)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
-    - Alamofire
     - BigInt
     - CryptoSwift
-    - SolarNetwork
 
 EXTERNAL SOURCES:
   eNotesSDKLukso:
     :path: "../"
 
 SPEC CHECKSUMS:
-  Alamofire: ae5c501addb7afdbb13687d7f2f722c78734c2d3
   BigInt: 2aad1a9942dc932ec8b84290d2c564a3d76f97ab
   CryptoSwift: d81eeaa59dc5a8d03720fe919a6fd07b51f7439f
-  eNotesSDKLukso: d76cc9ee8393ef1fb5f156e28700c884063ce9ca
-  SolarNetwork: f04b0094e0150b79f2b208a5367a374505ed70b9
+  eNotesSDKLukso: 0ce7dd659ffc7e565b26340bedb25522e9dcad76
 
 PODFILE CHECKSUM: 6a10628fe1c3b4f42c48e521adf6ad7d10092457
 

@@ -30,7 +30,6 @@ s.vendored_frameworks = 'eNotesSDKLukso/Classes/Dependency/**/*.framework'
 s.frameworks = 'AVFoundation'
 #s.public_header_files = 'eNotesSDK/Classes/Dependency/**/*.h'
 s.pod_target_xcconfig = { 'OTHER_LDFLAGS' => '-lObjC' }
-s.dependency 'SolarNetwork'
 s.dependency 'BigInt'
 s.dependency 'CryptoSwift'
 s.xcconfig = { 'ENABLE_BITCODE' => 'NO'}

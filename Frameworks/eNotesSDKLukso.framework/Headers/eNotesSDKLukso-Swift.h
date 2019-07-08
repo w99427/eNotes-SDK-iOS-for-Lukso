@@ -218,29 +218,10 @@ SWIFT_CLASS("_TtC14eNotesSDKLukso17CardReaderManager")
 
 
 
-
-
-
-
 SWIFT_CLASS("_TtC14eNotesSDKLukso14EnoteFormatter")
 @interface EnoteFormatter : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
-
-
-SWIFT_CLASS("_TtC14eNotesSDKLukso14NetworkManager")
-@interface NetworkManager : NSObject
-- (nonnull instancetype)init SWIFT_UNAVAILABLE;
-+ (nonnull instancetype)new SWIFT_DEPRECATED_MSG("-init is unavailable");
-@end
-
-
-
-
-
-
-
-
 
 
 SWIFT_CLASS("_TtC14eNotesSDKLukso3Tlv")

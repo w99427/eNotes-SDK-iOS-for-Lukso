@@ -1,6 +1,6 @@
 CONFIGURATION_BUILD_DIR = ${PODS_CONFIGURATION_BUILD_DIR}/eNotesSDKLukso
 ENABLE_BITCODE = NO
-FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/Alamofire" "${PODS_CONFIGURATION_BUILD_DIR}/BigInt" "${PODS_CONFIGURATION_BUILD_DIR}/CryptoSwift" "${PODS_CONFIGURATION_BUILD_DIR}/SolarNetwork" "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/Ethers"
+FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/BigInt" "${PODS_CONFIGURATION_BUILD_DIR}/CryptoSwift" "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/Ethers"
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
 LIBRARY_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/ACSBluetooth" "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/CoreBitcoin"
 OTHER_LDFLAGS = $(inherited) -l"ACSBluetooth" -l"CoreBitcoin" -l"ObjC" -framework "AVFoundation" -framework "ethers"
