@@ -42,8 +42,8 @@ public class CardReaderManager: NSObject {
     public typealias VerifyClosure = ((Bool) -> ())?
     /// signature count callback - return int type
     public typealias CountClosure = ((Int) -> ())?
-    /// sign tx callback - return signed tx
-    public typealias RawtxClosure = ((String) -> ())?
+    /// sign tx callback - return r, s, v,  signed tx
+    public typealias RawtxClosure = ((String, String, UInt8, String) -> ())?
     
     // NFC
     private var nfcTagReaderSession: NFCTagReaderSession?
@@ -329,15 +329,16 @@ extension CardReaderManager {
     ///  - data: transfer data if send an ERC20 token
     ///  - closure:
     ///   - String: return the rawtx which will be used to send raw transaction
-    public func getEthRawTransaction(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, closure: RawtxClosure) {
+    public func getEthRawTransaction(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
         
-        func signEthRawTx(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, closure: RawtxClosure) {
+        func signEthRawTx(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
             
             let transaction = Transaction()
             transaction.toAddress = Address(string: toAddress)
             transaction.gasPrice = BigNumber(hexString: gasPrice)
             transaction.gasLimit = BigNumber(hexString: estimateGas)
             transaction.nonce = nonce
+            transaction.chainId = ChainId(rawValue: chainId)
             if let data = data {
                 transaction.data = data
                 transaction.value = BigNumber(integer: 0)
@@ -387,18 +388,16 @@ extension CardReaderManager {
                 let serialize = transaction.serialize()
                 let rawtx = BTCHexFromData(serialize).addHexPrefix()
                 
-                // use ethers to sign
-//                if let ethSignData = Signature(data: self.txSignatureData) { // 这儿签名的Data最后少了一位（28或28）
-//                    print(ethSignData.r.toHexString())
-//                    print(ethSignData.s.toHexString())
-//                    print(ethSignData.v)
-//                    transaction.populateSignature(withR: ethSignData.r, s: ethSignData.s, address: Address(string: address))
-//                    let serialize = transaction.serialize()
-//                    let rawtx = BTCHexFromData(serialize).addHexPrefix()
-//                    print(rawtx)
-//                }
+                let rHex = transaction.signature?.r.toHexString().addHexPrefix() ?? ""
+                let sHex = transaction.signature?.s.toHexString().addHexPrefix() ?? ""
+                var v = UInt8(transaction.signature?.v ?? 0)
+                if chainId > 0 {
+                    v = v + chainId * 2 + 35
+                } else {
+                    v = v + 27
+                }
                 
-                closure?(rawtx)
+                closure?(rHex, sHex, v, rawtx)
                 if self.scanType == .sign {
                     self.nfcTagReaderSession?.invalidate()
                     self.nfcTagReaderSession = nil
@@ -408,7 +407,7 @@ extension CardReaderManager {
         
         scanNFC(type: .sign)
         nfcDetectClosure = {
-            signEthRawTx(toAddress: toAddress, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, closure: closure)
+            signEthRawTx(toAddress: toAddress, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: chainId, closure: closure)
         }
     }
 }

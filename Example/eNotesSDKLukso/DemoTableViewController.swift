@@ -65,9 +65,9 @@ class DemoTableViewController: UITableViewController {
         let estimateGas = "0x5208"
         let nonce: UInt = 1
         
-        CardReaderManager.shared.getEthRawTransaction(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce) { (rawTx) in
+        CardReaderManager.shared.getEthRawTransaction(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { [weak self] r, s, v, rawTx in
             DispatchQueue.main.async {
-                self.txLbl.text = "raw tx: \(rawTx)"
+                self?.txLbl.text = "r: \(r) \ns: \(s) \nv: \(v) \nrwaTx: \(rawTx)"
             }
         }
     }
