@@ -96,8 +96,8 @@ class CertificateParser: NSObject {
         card.issuer = issuer
         card.issueTime = issueTime
         card.deno = deno
-        card.blockchain = blockchain == "80000000" ? .bitcoin : .ethereum
-        card.network = toNetwork()
+        card.blockchain = blockchain
+        card.network = network
         card.contract = contract
         card.publicKey = publicKeyInformation
         card.serialNumber = serialNumber
@@ -107,28 +107,5 @@ class CertificateParser: NSObject {
         card.s = s
         
         return card
-    }
-    
-    /// convert to 'Network'
-    private func toNetwork() -> Network {
-        if blockchain == "80000000" {
-            switch network {
-            case 0:
-                return .mainnet
-            default:            // network == 1
-                return .testnet
-            }
-        } else {
-            switch network {
-            case 1:
-                return .ethereum
-            case 3:
-                return .ropsten
-            case 4:
-                return .rinkeby
-            default:            // network == 42
-                return .kovan
-            }
-        }
     }
 }

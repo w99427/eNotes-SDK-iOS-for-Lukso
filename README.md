@@ -34,7 +34,7 @@ Get public key
 
 ```
 /// callback return the hex string value
-CardReaderManager.shared.getPublicKey { publicKey in
+CardReaderManager.shared.readBlockchainPublicKey { publicKey in
     print(publicKey)  
 }
 ```
@@ -42,7 +42,7 @@ CardReaderManager.shared.getPublicKey { publicKey in
 Verify public key, call this method you should get public key first
 ```
 /// callback return bool value
-CardReaderManager.shared.verify { success in
+CardReaderManager.shared.verifyPublicKeyAction { success in
     print(success)       
 }
 ```
@@ -51,7 +51,7 @@ Get signature count
 
 ```
 /// callback return int value
-CardReaderManager.shared.getCount { count in
+CardReaderManager.shared.readTransactionSignCounter { count in
     print(count)  
 }
 ```
@@ -67,8 +67,8 @@ let estimateGas = "0x5208"
 let nonce: UInt = 1
 
 /// callback return signed raw transaction
-CardReaderManager.shared.getEthRawTransaction(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { (rawTx) in
-    print("r: \(r) \ns: \(s) \nv: \(v) \nrwaTx: \(rawTx)")
+CardReaderManager.shared.signTransactionHash(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { r, s, v, rawTx in
+    print("r: \(r) \ns: \(s) \nv: \(v) \nrawTx: \(rawTx)")
 }
 ```
 

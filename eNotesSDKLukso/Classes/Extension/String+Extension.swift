@@ -37,7 +37,7 @@ extension String {
             return self
         }
     }
-    
+
     func subString(to index: Int) -> String {
         if self.count > index {
             let endIndex = self.index(self.startIndex, offsetBy: index)
@@ -46,23 +46,6 @@ extension String {
         } else {
             return self
         }
-    }
-    
-    /// Return sub string position
-    ///
-    /// - parameters:
-    ///  - subStr: sub string
-    ///  - backwords: first appear if false, last appear if true
-    /// - return:
-    ///  - index of sub string 
-    func positionOf(subStr: String, backwords: Bool = false) -> Int {
-        if let range = range(of: subStr, options: backwords ? .backwards : .literal) {
-            if !range.isEmpty {
-                return distance(from: startIndex, to: range.lowerBound)
-            }
-        }
-        
-        return 0
     }
 }
 
@@ -73,23 +56,5 @@ extension String {
             return "0x" + self
         }
         return self
-    }
-    
-    func urlEncoded() -> String {
-        let encodeUrlString = self.addingPercentEncoding(withAllowedCharacters:
-            .urlQueryAllowed)
-        return encodeUrlString ?? ""
-    }
-    
-    func hexToStr() -> String {
-        let bigNum = BigNumber(hexString: self)
-        let str = bigNum?.decimalString ?? ""
-        return str
-    }
-    
-    func strToHex() -> String {
-        let bigNum = BigNumber(decimalString: self)
-        let hexStr = bigNum?.hexString ?? ""
-        return hexStr
     }
 }

@@ -41,10 +41,6 @@ extension Data {
     public var bytes: Array<UInt8> {
         return Array(self)
     }
-    
-//    public func toHexString() -> String {
-//        return bytes.toHexString()
-//    }
 }
 
 extension Data {

@@ -20,9 +20,8 @@ class DemoTableViewController: UITableViewController {
         super.viewDidLoad()
     }
     
-    /// 获取公钥
     @IBAction func getPublicKeyAction(_ sender: UIButton) {
-        CardReaderManager.shared.getPublicKey { [weak self] publicKey in
+        CardReaderManager.shared.readBlockchainPublicKey { [weak self] publicKey in
             DispatchQueue.main.async {
                 self?.publicKey = publicKey
                 self?.publicKeyLbl.text = publicKey
@@ -30,29 +29,26 @@ class DemoTableViewController: UITableViewController {
         }
     }
     
-    /// 验证公钥
     @IBAction func verifyPublicKeyAction(_ sender: Any) {
         guard publicKey != nil else {
             showAlert()
             return
         }
-        CardReaderManager.shared.verify { [weak self] success in
+        CardReaderManager.shared.verifyBlockchainPublicKey { [weak self] success in
             DispatchQueue.main.async {
             self?.publicKeyVerifyStatusLbl.text = "status: \(success ? "success" : "fail")"
             }
         }
     }
     
-    /// 获取交易签名次数
     @IBAction func getCountAction(_ sender: UIButton) {
-        CardReaderManager.shared.getCount { [weak self] count in
+        CardReaderManager.shared.readTransactionSignCounter { [weak self] count in
             DispatchQueue.main.async {
                 self?.countLbl.text = "count: \(count)"
             }
         }
     }
     
-    /// 交易签名
     @IBAction func generateTxAction(_ sender: UIButton) {
         guard publicKey != nil else {
             showAlert()
@@ -65,15 +61,15 @@ class DemoTableViewController: UITableViewController {
         let estimateGas = "0x5208"
         let nonce: UInt = 1
         
-        CardReaderManager.shared.getEthRawTransaction(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { [weak self] r, s, v, rawTx in
+        CardReaderManager.shared.signTransactionHash(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { [weak self] r, s, v, rawTx in
             DispatchQueue.main.async {
-                self?.txLbl.text = "r: \(r) \ns: \(s) \nv: \(v) \nrwaTx: \(rawTx)"
+                self?.txLbl.text = "r: \(r) \ns: \(s) \nv: \(v) \nrawTx: \(rawTx)"
             }
         }
     }
     
     private func showAlert() {
-        let alertVC = UIAlertController(title: nil, message: "You must get public key first", preferredStyle: .alert)
+        let alertVC = UIAlertController(title: "Warning", message: "You must get public key first", preferredStyle: .alert)
         alertVC.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alertVC, animated: true, completion: nil)
     }

@@ -4,7 +4,7 @@ FRAMEWORK_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/BigInt" "
 GCC_PREPROCESSOR_DEFINITIONS = $(inherited) COCOAPODS=1
 HEADER_SEARCH_PATHS = $(inherited) "${PODS_CONFIGURATION_BUILD_DIR}/BigInt/BigInt.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/CryptoSwift/CryptoSwift.framework/Headers" "${PODS_CONFIGURATION_BUILD_DIR}/eNotesSDKLukso/eNotesSDKLukso.framework/Headers"
 LD_RUNPATH_SEARCH_PATHS = $(inherited) '@executable_path/Frameworks' '@loader_path/Frameworks'
-LIBRARY_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/ACSBluetooth" "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/CoreBitcoin"
+LIBRARY_SEARCH_PATHS = $(inherited) "${PODS_ROOT}/../../eNotesSDKLukso/Classes/Dependency/CoreBitcoin"
 OTHER_LDFLAGS = $(inherited) -ObjC -framework "AVFoundation" -framework "BigInt" -framework "CryptoSwift" -framework "eNotesSDKLukso"
 OTHER_SWIFT_FLAGS = $(inherited) -D COCOAPODS
 PODS_BUILD_DIR = ${BUILD_DIR}

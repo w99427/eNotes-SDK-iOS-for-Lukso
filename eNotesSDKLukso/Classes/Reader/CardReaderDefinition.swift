@@ -24,12 +24,6 @@
 //  THE SOFTWARE.
 //
 
-let VersionCertificate: Int = 1
-let VersionApdu = "1.2.0"
-
-/// NFC device master key, used to authenticate the deivce
-let MasterKey = "41435231323535552D4A312041757468"
-
 /// The data field of APDUs are encoded in SIMPLE-TLV which is defined in ISO/IEC 7816-4, Tag definition here
 let TagDeviceCertificate = "30"
 let TagDevicePrivateKey = "52"
@@ -41,36 +35,9 @@ let TagVerificationSignature = "73"
 let TagTransactionSignatureCounter = "90"
 let TagTransactionHash = "91"
 let TagTransactionSignature = "92"
-let TagApduVersion = "12"
-let TagFreeze = "93"
-let TagFreezeStatus = "94"
-let TagUnFreezeLeftCount = "95"
-
-/// error in card read processing
-///
-/// none: everything is ok, on error there
-/// deviceNotFound: no bluetooth or reader device found
-/// absent: card absent when connecting
-/// parsing: card is in apdu parsing
-/// apduReaderError: apdu command read error
-/// apduVersionTooLow: version of the apdu protocol is too low
-/// verifyError: verify certificate, device or blockchain error
-public enum CardReaderError {
-    case none
-    case deviceNotFound
-    case absent
-    case absentLimit
-    case parsing
-    case apduReaderError
-    case apduVersionTooLow
-    case verifyError
-}
 
 /// All apdu command
 ///
-/// none: everything is ok, on error there
-/// aid: Application id in device which you can identify your application to send apdu
-/// version: support apdu protocol version
 /// publicKey: blockchain public key, get it by send apdu command
 /// cardStatus: safe or danger
 /// certificate: card certificate, need verify, get public key by 'call'(public key -> certificate private key)
@@ -111,8 +78,8 @@ public struct Card {
     public var issuer = ""
     public var issueTime = Date()
     public var deno = 0
-    public var blockchain: Blockchain = .bitcoin
-    public var network: Network = .testnet
+    public var blockchain: String?
+    public var network: Int?
     public var contract: String?
     public var publicKey = ""
     public var serialNumber = ""
@@ -124,26 +91,10 @@ public struct Card {
     public var address = ""
     public var isSafe = true
     public var publicKeyData: Data?
-    public var isFrozen: Bool?
     // ERC20 token info
     public var name: String?
     public var symbol: String?
     public var decimals = 0
     
     public init() {}
-}
-
-/// card type, we support btc and eth for now
-public enum Blockchain: Int {
-    case bitcoin
-    case ethereum
-}
-
-public enum Network: Int {
-    case mainnet
-    case testnet
-    case ethereum
-    case kovan
-    case ropsten
-    case rinkeby
 }

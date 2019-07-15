@@ -25,9 +25,16 @@
 //
 
 import UIKit
-import CoreBluetooth
 import ethers
 import CoreNFC
+
+/// nfc read type
+private enum ScanType {
+    case getPublicKey
+    case verify
+    case getCount
+    case sign
+}
 
 public class CardReaderManager: NSObject {
     
@@ -65,257 +72,34 @@ public class CardReaderManager: NSObject {
     private var certP1 = 0
     private var cert = Data()
     private var txSignature = ""
-    private var txSignatureData = Data()
     private var card = Card()
 }
 
-// MARK: NFC Reader
-
-/// nfc read type
-public enum ScanType {
-    case getPublicKey
-    case verify
-    case getCount
-    case sign
-}
-
-extension CardReaderManager: NFCTagReaderSessionDelegate {
+// MARK: - Public
+extension CardReaderManager {
     
-    // MARK: NFCTagReaderSessionDelegate
-    
-    public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
-        
-    }
-    
-    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        nfcTagReaderSession?.invalidate()
-        nfcTagReaderSession = nil
-    }
-    
-    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
-        for tag in tags {
-            switch tag {
-            case .iso7816(let tag7816):
-                session.connect(to: tag) { [weak self] (error) in
-                    guard error == nil else { return }
-                    guard !tag7816.initialSelectedAID.isEmpty else { return }
-                    self?.nfcTag = tag7816
-                    self?.nfcDetectClosure?()
-                }
-            default: ()
-            }
-        }
-    }
-    
-    /// start NFC to read tag
-    private func scanNFC(type: ScanType) {
-        self.scanType = type
-        nfcTagReaderSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
-        //        nfcTagReaderSession?.alertMessage = "Place the device on the innercover of the passport"
-        nfcTagReaderSession?.begin()
-    }
-    
-    /// get public key
-    public func getPublicKey(closure: PublicKeyClosure) { // closure: publicKeyClosure
+    /// Get public key
+    public func readBlockchainPublicKey(closure: PublicKeyClosure) {
         scanNFC(type: .getPublicKey)
         nfcDetectClosure = { [weak self] in
             self?._getPublicKey(closure: closure)
         }
     }
     
-    /// verify public key
-    public func verify(closure: VerifyClosure) {
+    /// Verify public key
+    public func verifyBlockchainPublicKey(closure: VerifyClosure) {
         scanNFC(type: .verify)
         nfcDetectClosure = { [weak self] in
             self?._verifyPublicKey(closure: closure)
         }
     }
     
-    /// get signature count
-    public func getCount(closure: CountClosure) {
+    /// Get signature count
+    public func readTransactionSignCounter(closure: CountClosure) {
         scanNFC(type: .getCount)
         nfcDetectClosure = { [weak self] in
             self?._getCount(closure: closure)
         }
-    }
-    
-    private func _getPublicKey(closure: PublicKeyClosure) {
-        sendApdu(apdu: .publicKey)
-        publicKeyClosure = { [weak self] in
-            closure?($0)
-            if self?.scanType == .getPublicKey {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
-        }
-    }
-    
-    private func _verifyPublicKey(closure: VerifyClosure) {
-        sendApdu(apdu: .verifyBlockchain)
-        verifyClosure = { [weak self] in
-            closure?($0)
-            if self?.scanType == .verify {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
-        }
-    }
-    
-    private func _getCount(closure: CountClosure) {
-        sendApdu(apdu: .cardStatus)
-        countClosure = { [weak self] in
-            closure?($0)
-            if self?.scanType == .getCount {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
-        }
-    }
-}
-
-// MARK: - Apdu handle
-extension CardReaderManager {
-    
-    private func sendApdu(apdu: Apdu) {
-        self.apdu = apdu
-        
-        var apduData: Data?
-        switch apdu {
-        case .verifyDevice:
-            apduData = getApduData(tag: TagChallenge, apdu: apdu)
-        case .verifyBlockchain:
-            apduData = getApduData(tag: TagChallenge, apdu: apdu)
-        default:
-            apduData = Data(hex: apdu.value)
-        }
-        
-        guard let data = apduData else { return }
-        guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
-        guard let nfcTag = self.nfcTag else { return }
-        nfcTag.sendCommand(apdu: apdu7816) { (data, _, _, error) in
-            guard error == nil else { return }
-            switch self.apdu {
-            case .publicKey:
-                self.savePublicKey(rawApdu: data)
-            case .cardStatus:
-                self.saveCardStatus(rawApdu: data)
-            case .verifyBlockchain:
-                self.verifyBlockchain(rawApdu: data)
-            case .certificate:
-                self.judgeCertificate(rawApdu: data)
-            default: break
-            }
-        }
-    }
-    
-    /// Get apdu data, for type verifyDevice, verifyBlockchain
-    ///
-    /// - Parameters:
-    ///  - tag: TLV's T: tag
-    ///  - apdu: type verifyDevice, verifyBlockchain
-    private func getApduData(tag: String, apdu: Apdu) -> Data? {
-        do {
-            random = try SecRandom.generate(bytes: 32).toHexString()
-            let serialData = Tlv.encode(tv: Tlv.generate(tag: Data(hex: tag), value: Data(hex: random)))
-            let apduStr = apdu.value + serialData.toHexString()
-            let apduData = Data(hex: apduStr)
-            return apduData
-        } catch {}
-        
-        return nil
-    }
-    
-    /// 通过NFC读取，没有末尾的9000，直接解析即可
-    func getTv(rawApdu: Data) -> Tv? {
-        return Tlv.decode(data: rawApdu)
-    }
-    
-    /// Save public key for global use
-    private func savePublicKey(rawApdu: Data) {
-        guard let tv = getTv(rawApdu: rawApdu) else { return }
-        let tag = Data(hex: TagBlockChainPublicKey)
-        guard let publicKey = tv[tag] else { return }
-        self.publicKey = publicKey
-        publicKeyClosure?(publicKey.toHexString().addHexPrefix())
-    }
-    
-    /// Save card safe status for global use
-    private func saveCardStatus(rawApdu: Data) {
-        guard let tv = getTv(rawApdu: rawApdu) else { return }
-        let tag = Data(hex: TagTransactionSignatureCounter)
-        guard let status = tv[tag] else { return }
-        self.status = status.toHexString()
-        countClosure?(BigNumber(hexString: "0x" + self.status).integerValue)
-    }
-    
-    private func verifyBlockchain(rawApdu: Data) {
-        guard let tv = getTv(rawApdu: rawApdu) else { return }
-        let typeSignature = Data(hex: TagVerificationSignature), typeSalt = Data(hex: TagSalt)
-        guard let signature = tv[typeSignature], let salt = tv[typeSalt], let publicKey = publicKey else {
-            return
-        }
-        let org = random.appending(salt.toHexString())
-        let r = signature.subdata(in: 0..<32).toHexString()
-        let s = signature.subdata(in: 32..<signature.count).toHexString()
-        guard Verification.verify(r: r, s: s, org: org, publicKey: publicKey.toHexString()) else {
-            verifyClosure?(false)
-            return
-        }
-        
-        verifyClosure?(true)
-    }
-}
-
-// MARK: RawTransaction
-
-extension CardReaderManager {
-    
-    private func signTxHash(hashStr: String) {
-        apdu = .signPrivateKey
-        let tv = Tlv.generate(tag: Data(hex: TagTransactionHash), value: Data(hex: hashStr))
-        let serialData = Tlv.encode(tv: tv)
-        let apduStr = apdu.value + serialData.toHexString()
-        let data = Data(hex: apduStr)
-        guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
-        nfcTag?.sendCommand(apdu: apdu7816) { (data, _, _, error) in
-            guard error == nil else { return }
-            self.signTxHash(rawApdu: data)
-        }
-    }
-    
-    func signTxHash(rawApdu: Data) {
-        guard let tv = getTv(rawApdu: rawApdu) else { return }
-        let tag = Data(hex: TagTransactionSignature)
-        guard let signature = tv[tag], let privateStr = BTCHexFromData(signature) else {
-            return
-        }
-        
-        txSignature = privateStr
-        txSignatureData = signature
-        sendApdu(apdu: .certificate("\(self.certP1)"))
-    }
-    
-    /// 判断长度是否请求完了，没完的话继续读取证书
-    private func judgeCertificate(rawApdu: Data) {
-        cert.append(rawApdu)
-        if rawApdu.count < 255 {
-            let tv = Tlv.decode(data: cert)
-            let tag = Data(hex: TagDeviceCertificate)
-            guard let certValue = tv[tag] else { return }
-            cert = certValue
-            getAddress()
-        } else {
-            sendApdu(apdu: .certificate("\(certP1 + 1)"))
-        }
-    }
-    
-    private func getAddress() {
-        guard !cert.isEmpty else { return }
-        guard let certParser = CertificateParser(hexCert: cert.toBase64String()) else { return }
-        card = certParser.toCard()
-        let address = EnoteFormatter.address(publicKey: publicKey, network: card.network)
-        
-        signTxHashClosure?(address, txSignature)
     }
     
     /// Get ethereum raw transaction before send raw transaction
@@ -327,9 +111,13 @@ extension CardReaderManager {
     ///  - estimateGas: estimate gas
     ///  - nonce: nonce
     ///  - data: transfer data if send an ERC20 token
+    ///  - chainId: chainId
     ///  - closure:
-    ///   - String: return the rawtx which will be used to send raw transaction
-    public func getEthRawTransaction(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
+    ///   - String: r
+    ///   - String: s
+    ///   - UInt8:  v
+    ///   - String: signed tx
+    public func signTransactionHash(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
         
         func signEthRawTx(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
             
@@ -409,5 +197,212 @@ extension CardReaderManager {
         nfcDetectClosure = {
             signEthRawTx(toAddress: toAddress, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: chainId, closure: closure)
         }
+    }
+}
+
+// MARK: - NFCTagReaderSessionDelegate
+extension CardReaderManager: NFCTagReaderSessionDelegate {
+    
+    public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
+        
+    }
+    
+    public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
+        nfcTagReaderSession?.invalidate()
+        nfcTagReaderSession = nil
+    }
+    
+    public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
+        for tag in tags {
+            switch tag {
+            case .iso7816(let tag7816):
+                session.connect(to: tag) { [weak self] (error) in
+                    guard error == nil else { return }
+                    guard !tag7816.initialSelectedAID.isEmpty else { return }
+                    self?.nfcTag = tag7816
+                    self?.nfcDetectClosure?()
+                }
+            default: ()
+            }
+        }
+    }
+}
+
+// MARK: - Private
+extension CardReaderManager {
+    
+    /// start NFC to read tag
+    private func scanNFC(type: ScanType) {
+        self.scanType = type
+        nfcTagReaderSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
+        //        nfcTagReaderSession?.alertMessage = "Place the device on the innercover of the passport"
+        nfcTagReaderSession?.begin()
+    }
+    
+    private func _getPublicKey(closure: PublicKeyClosure) {
+        sendApdu(apdu: .publicKey)
+        publicKeyClosure = { [weak self] in
+            closure?($0)
+            if self?.scanType == .getPublicKey {
+                self?.nfcTagReaderSession?.invalidate()
+                self?.nfcTagReaderSession = nil
+            }
+        }
+    }
+    
+    private func _verifyPublicKey(closure: VerifyClosure) {
+        sendApdu(apdu: .verifyBlockchain)
+        verifyClosure = { [weak self] in
+            closure?($0)
+            if self?.scanType == .verify {
+                self?.nfcTagReaderSession?.invalidate()
+                self?.nfcTagReaderSession = nil
+            }
+        }
+    }
+    
+    private func _getCount(closure: CountClosure) {
+        sendApdu(apdu: .cardStatus)
+        countClosure = { [weak self] in
+            closure?($0)
+            if self?.scanType == .getCount {
+                self?.nfcTagReaderSession?.invalidate()
+                self?.nfcTagReaderSession = nil
+            }
+        }
+    }
+    
+    private func sendApdu(apdu: Apdu) {
+        self.apdu = apdu
+        
+        var apduData: Data?
+        switch apdu {
+        case .verifyDevice:
+            apduData = getApduData(tag: TagChallenge, apdu: apdu)
+        case .verifyBlockchain:
+            apduData = getApduData(tag: TagChallenge, apdu: apdu)
+        default:
+            apduData = Data(hex: apdu.value)
+        }
+        
+        guard let data = apduData else { return }
+        guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
+        guard let nfcTag = self.nfcTag else { return }
+        nfcTag.sendCommand(apdu: apdu7816) { (data, _, _, error) in
+            guard error == nil else { return }
+            switch self.apdu {
+            case .publicKey:
+                self.savePublicKey(rawApdu: data)
+            case .cardStatus:
+                self.saveCardStatus(rawApdu: data)
+            case .verifyBlockchain:
+                self.verifyBlockchain(rawApdu: data)
+            case .certificate:
+                self.judgeCertificate(rawApdu: data)
+            default: break
+            }
+        }
+    }
+    
+    /// Get apdu data, for type verifyDevice, verifyBlockchain
+    ///
+    /// - Parameters:
+    ///  - tag: TLV's T: tag
+    ///  - apdu: type verifyDevice, verifyBlockchain
+    private func getApduData(tag: String, apdu: Apdu) -> Data? {
+        do {
+            random = try SecRandom.generate(bytes: 32).toHexString()
+            let serialData = Tlv.encode(tv: Tlv.generate(tag: Data(hex: tag), value: Data(hex: random)))
+            let apduStr = apdu.value + serialData.toHexString()
+            let apduData = Data(hex: apduStr)
+            return apduData
+        } catch {}
+        
+        return nil
+    }
+    
+    private func getTv(rawApdu: Data) -> Tv? {
+        return Tlv.decode(data: rawApdu)
+    }
+    
+    /// Save public key for global use
+    private func savePublicKey(rawApdu: Data) {
+        guard let tv = getTv(rawApdu: rawApdu) else { return }
+        let tag = Data(hex: TagBlockChainPublicKey)
+        guard let publicKey = tv[tag] else { return }
+        self.publicKey = publicKey
+        publicKeyClosure?(publicKey.toHexString().addHexPrefix())
+    }
+    
+    /// Save card safe status for global use
+    private func saveCardStatus(rawApdu: Data) {
+        guard let tv = getTv(rawApdu: rawApdu) else { return }
+        let tag = Data(hex: TagTransactionSignatureCounter)
+        guard let status = tv[tag] else { return }
+        self.status = status.toHexString()
+        countClosure?(BigNumber(hexString: "0x" + self.status).integerValue)
+    }
+    
+    private func verifyBlockchain(rawApdu: Data) {
+        guard let tv = getTv(rawApdu: rawApdu) else { return }
+        let typeSignature = Data(hex: TagVerificationSignature), typeSalt = Data(hex: TagSalt)
+        guard let signature = tv[typeSignature], let salt = tv[typeSalt], let publicKey = publicKey else {
+            return
+        }
+        let org = random.appending(salt.toHexString())
+        let r = signature.subdata(in: 0..<32).toHexString()
+        let s = signature.subdata(in: 32..<signature.count).toHexString()
+        guard Verification.verify(r: r, s: s, org: org, publicKey: publicKey.toHexString()) else {
+            verifyClosure?(false)
+            return
+        }
+        
+        verifyClosure?(true)
+    }
+    
+    private func signTxHash(hashStr: String) {
+        apdu = .signPrivateKey
+        let tv = Tlv.generate(tag: Data(hex: TagTransactionHash), value: Data(hex: hashStr))
+        let serialData = Tlv.encode(tv: tv)
+        let apduStr = apdu.value + serialData.toHexString()
+        let data = Data(hex: apduStr)
+        guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
+        nfcTag?.sendCommand(apdu: apdu7816) { (data, _, _, error) in
+            guard error == nil else { return }
+            self.signTxHash(rawApdu: data)
+        }
+    }
+    
+    private func signTxHash(rawApdu: Data) {
+        guard let tv = getTv(rawApdu: rawApdu) else { return }
+        let tag = Data(hex: TagTransactionSignature)
+        guard let signature = tv[tag], let privateStr = BTCHexFromData(signature) else {
+            return
+        }
+        
+        txSignature = privateStr
+        sendApdu(apdu: .certificate("\(self.certP1)"))
+    }
+    
+    private func judgeCertificate(rawApdu: Data) {
+        cert.append(rawApdu)
+        if rawApdu.count < 255 {
+            let tv = Tlv.decode(data: cert)
+            let tag = Data(hex: TagDeviceCertificate)
+            guard let certValue = tv[tag] else { return }
+            cert = certValue
+            getAddress()
+        } else {
+            sendApdu(apdu: .certificate("\(certP1 + 1)"))
+        }
+    }
+    
+    private func getAddress() {
+        guard !cert.isEmpty else { return }
+        guard let certParser = CertificateParser(hexCert: cert.toBase64String()) else { return }
+        card = certParser.toCard()
+        let address = EnoteFormatter.address(publicKey: publicKey)
+        
+        signTxHashClosure?(address, txSignature)
     }
 }
