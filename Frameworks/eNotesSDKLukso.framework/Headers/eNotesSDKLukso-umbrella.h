@@ -107,7 +107,6 @@
 #import "x509.h"
 #import "x509v3.h"
 #import "x509_vfy.h"
-#import "BitcoinHelper.h"
 
 FOUNDATION_EXPORT double eNotesSDKLuksoVersionNumber;
 FOUNDATION_EXPORT const unsigned char eNotesSDKLuksoVersionString[];
