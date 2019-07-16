@@ -24,8 +24,6 @@
 //  THE SOFTWARE.
 //
 
-import ethers
-
 extension String {
     
     func subString(from index: Int) -> String {

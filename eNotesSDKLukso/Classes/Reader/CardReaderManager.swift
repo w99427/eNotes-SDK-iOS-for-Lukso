@@ -25,7 +25,6 @@
 //
 
 import UIKit
-import ethers
 import CoreNFC
 
 /// nfc read type
@@ -48,9 +47,9 @@ public class CardReaderManager: NSObject {
     /// verify public key callback - return success if verify passed
     public typealias VerifyClosure = ((Bool) -> ())?
     /// signature count callback - return int type
-    public typealias CountClosure = ((Int) -> ())?
-    /// sign tx callback - return r, s, v,  signed tx
-    public typealias RawtxClosure = ((String, String, UInt8, String) -> ())?
+    public typealias CountClosure = ((Int32) -> ())?
+    /// sign tx callback - return r, s
+    public typealias SignTxHashClosure = ((Data, Data) -> ())?
     
     // NFC
     private var nfcTagReaderSession: NFCTagReaderSession?
@@ -61,8 +60,8 @@ public class CardReaderManager: NSObject {
     private var publicKeyClosure: PublicKeyClosure
     private var verifyClosure: VerifyClosure
     private var countClosure: CountClosure
-    private var rawtxClosure: RawtxClosure
-    private var signTxHashClosure: ((String, String) -> ())?
+    private var signTxHashClosure: SignTxHashClosure
+    private var _signTxHashClosure: ((String, String) -> ())?
     
     // MARK: - Apdu handle
     private var apdu: Apdu = .publicKey
@@ -117,34 +116,16 @@ extension CardReaderManager {
     ///   - String: s
     ///   - UInt8:  v
     ///   - String: signed tx
-    public func signTransactionHash(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
+    public func signTransactionHash(hashData: Data?, closure: SignTxHashClosure) {
         
-        func signEthRawTx(toAddress: String, value: String, gasPrice: String, estimateGas: String, nonce: UInt, data: Data? = nil, chainId: UInt8, closure: RawtxClosure) {
+        func signEthRawTx(hashData: Data?, closure: SignTxHashClosure) {
             
-            let transaction = Transaction()
-            transaction.toAddress = Address(string: toAddress)
-            transaction.gasPrice = BigNumber(hexString: gasPrice)
-            transaction.gasLimit = BigNumber(hexString: estimateGas)
-            transaction.nonce = nonce
-            transaction.chainId = ChainId(rawValue: chainId)
-            if let data = data {
-                transaction.data = data
-                transaction.value = BigNumber(integer: 0)
-            } else {
-                if let balanceNum = BigNumber(hexString: value), let valueNum = balanceNum.sub(transaction.gasPrice.mul(transaction.gasLimit)) {
-                    transaction.value = valueNum
-                }
-            }
+            guard let hashData = hashData, hashData.count == 32 else { return }
             
-            let serializeData = transaction.unsignedSerialize()
-            let secureData = SecureData.keccak256(serializeData)
-            guard let hash = Hash(data: secureData) else {
-                return
-            }
-            let hexHash = hash.hexString.subString(from: 2)
+            let hexHash = hashData.toHexString()
             
             signTxHash(hashStr: hexHash)
-            signTxHashClosure = { address, signedHash in
+            _signTxHashClosure = { address, signedHash in
                 let rStr = signedHash.subString(to: 64)
                 let sStr = signedHash.subString(from: 64)
                 guard let bigR = BTCBigNumber(hexString: rStr), let bigS = BTCBigNumber(hexString: sStr) else {
@@ -172,20 +153,23 @@ extension CardReaderManager {
                 guard let rData = BTCBigNumber(bignum: bigR.bignum).unsignedBigEndian, let sData = BTCBigNumber(bignum: bigS.bignum).unsignedBigEndian else {
                     return
                 }
-                transaction.populateSignature(withR: rData, s: sData, address: Address(string: address))
-                let serialize = transaction.serialize()
-                let rawtx = BTCHexFromData(serialize).addHexPrefix()
+                closure?(rData, sData)
                 
-                let rHex = transaction.signature?.r.toHexString().addHexPrefix() ?? ""
-                let sHex = transaction.signature?.s.toHexString().addHexPrefix() ?? ""
-                var v = UInt8(transaction.signature?.v ?? 0)
-                if chainId > 0 {
-                    v = v + chainId * 2 + 35
-                } else {
-                    v = v + 27
-                }
+                print("r: \(rData.toHexString()), s: \(sData.toHexString())")
+//                transaction.populateSignature(withR: rData, s: sData, address: Address(string: address))
+//                let serialize = transaction.serialize()
+//                let rawtx = BTCHexFromData(serialize).addHexPrefix()
+//
+//                let rHex = transaction.signature?.r.toHexString().addHexPrefix() ?? ""
+//                let sHex = transaction.signature?.s.toHexString().addHexPrefix() ?? ""
+//                var v = UInt8(transaction.signature?.v ?? 0)
+//                if chainId > 0 {
+//                    v = v + chainId * 2 + 35
+//                } else {
+//                    v = v + 27
+//                }
                 
-                closure?(rHex, sHex, v, rawtx)
+//                closure?(rHex, sHex, v, rawtx)
                 if self.scanType == .sign {
                     self.nfcTagReaderSession?.invalidate()
                     self.nfcTagReaderSession = nil
@@ -195,7 +179,7 @@ extension CardReaderManager {
         
         scanNFC(type: .sign)
         nfcDetectClosure = {
-            signEthRawTx(toAddress: toAddress, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: chainId, closure: closure)
+            signEthRawTx(hashData: hashData, closure: closure)
         }
     }
 }
@@ -340,7 +324,9 @@ extension CardReaderManager {
         let tag = Data(hex: TagTransactionSignatureCounter)
         guard let status = tv[tag] else { return }
         self.status = status.toHexString()
-        countClosure?(BigNumber(hexString: "0x" + self.status).integerValue)
+        
+        let signCounter = BTCBigNumber(string: "0x\(self.status)", base: 16).int32value
+        countClosure?(signCounter)
     }
     
     private func verifyBlockchain(rawApdu: Data) {
@@ -403,6 +389,6 @@ extension CardReaderManager {
         card = certParser.toCard()
         let address = EnoteFormatter.address(publicKey: publicKey)
         
-        signTxHashClosure?(address, txSignature)
+        _signTxHashClosure?(address, txSignature)
     }
 }

@@ -8,6 +8,7 @@
 
 import UIKit
 import eNotesSDKLukso
+import ethers
 
 class DemoTableViewController: UITableViewController {
     @IBOutlet weak var publicKeyLbl: UILabel!
@@ -60,10 +61,40 @@ class DemoTableViewController: UITableViewController {
         let gasPrice = "0x0165A0BC00"
         let estimateGas = "0x5208"
         let nonce: UInt = 1
+        let chainId: UInt8 = 42
         
-        CardReaderManager.shared.signTransactionHash(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { [weak self] r, s, v, rawTx in
+        let transaction = Transaction()
+        transaction.toAddress = Address(string: to)
+        transaction.gasPrice = BigNumber(hexString: gasPrice)
+        transaction.gasLimit = BigNumber(hexString: estimateGas)
+        transaction.nonce = nonce
+        transaction.chainId = ChainId(rawValue: chainId)
+        
+        if let balanceNum = BigNumber(hexString: value), let valueNum = balanceNum.sub(transaction.gasPrice.mul(transaction.gasLimit)) {
+            transaction.value = valueNum
+        }
+        
+        let serializeData = transaction.unsignedSerialize()
+        let hashData = SecureData.keccak256(serializeData)
+        
+        CardReaderManager.shared.signTransactionHash(hashData: hashData) { (r, s) in
+            
+            // TODO: 问辉哥发送地址是否需要SDK帮忙算
+            transaction.populateSignature(withR: r, s: s, address: Address(string: "0x75CF0C2881D6371fAcEeaA76152231Ea91119C06"))
+            let serialize = transaction.serialize()
+            let rawtx = "0x" + BTCHexFromData(serialize)
+            
+            let rHex = "0x" + (transaction.signature?.r.toHexString() ?? "")
+            let sHex = "0x" + (transaction.signature?.s.toHexString() ?? "")
+            var v = UInt8(transaction.signature?.v ?? 0)
+            if chainId > 0 {
+                v = v + chainId * 2 + 35
+            } else {
+                v = v + 27
+            }
+            
             DispatchQueue.main.async {
-                self?.txLbl.text = "r: \(r) \ns: \(s) \nv: \(v) \nrawTx: \(rawTx)"
+                self.txLbl.text = "r: \(rHex) \ns: \(sHex) \nv: \(v) \nrawTx: \(rawtx)"
             }
         }
     }
