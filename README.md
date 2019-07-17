@@ -22,53 +22,35 @@ To run the example project, download the code and replace your team configure, y
 
 ## Usage
 
-1. First, import eNotesSDKLukso where you will use the SDK methods
+First, import eNotesSDKLukso where you will use the SDK methods
 
 ```
 import eNotesSDKLukso
 ```
 
-2. Call methods
-
-Get public key
+New a reader object
 
 ```
-/// callback return the hex string value
-CardReaderManager.shared.readBlockchainPublicKey { publicKey in
-    print(publicKey)  
-}
+var reader = CardReaderManager()
 ```
 
-Verify public key, call this method you should get public key first
-```
-/// callback return bool value
-CardReaderManager.shared.verifyPublicKeyAction { success in
-    print(success)       
-}
-```
-
-Get signature count
+Set delegate
 
 ```
-/// callback return int value
-CardReaderManager.shared.readTransactionSignCounter { count in
-    print(count)  
-}
+reader.delegate = self
 ```
-
-Sign transaction hash, call this method you should get public key first
-
+Activate the NFC, that will call `didDetectNFC` delegate
 ```
-/// Example value
-let to = "0x18BDF4f15FDF3f53Ed0c1D7d81e1d9e09Ec28691"
-let value = "0x16345785d8a0000"
-let gasPrice = "0x0165A0BC00"
-let estimateGas = "0x5208"
-let nonce: UInt = 1
-
-/// callback return signed raw transaction
-CardReaderManager.shared.signTransactionHash(toAddress: to, value: value, gasPrice: gasPrice, estimateGas: estimateGas, nonce: nonce, chainId: 42) { r, s, v, rawTx in
-    print("r: \(r) \ns: \(s) \nv: \(v) \nrawTx: \(rawTx)")
+reader.activateNFC()
+```
+Call methods `readTransactionSignCounter` `readBlockchainPublicKey` `verifyBlockchainPublicKey` `signTransactionHash` in delegate
+```
+/// call sdk card interaction methods in this delegate
+func didDetectNFC() {
+    // for example, readTransactionSignCounter
+    reader.readTransactionSignCounter { count in
+        print(count)
+    }
 }
 ```
 

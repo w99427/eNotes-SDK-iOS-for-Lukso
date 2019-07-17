@@ -207,8 +207,7 @@ SWIFT_CLASS("_TtC14eNotesSDKLukso9AbiParser")
 
 SWIFT_CLASS("_TtC14eNotesSDKLukso17CardReaderManager")
 @interface CardReaderManager : NSObject
-- (nonnull instancetype)init SWIFT_UNAVAILABLE;
-+ (nonnull instancetype)new SWIFT_DEPRECATED_MSG("-init is unavailable");
+- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
 

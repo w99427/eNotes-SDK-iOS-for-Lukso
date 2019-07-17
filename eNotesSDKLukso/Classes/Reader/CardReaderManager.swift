@@ -27,23 +27,14 @@
 import UIKit
 import CoreNFC
 
-/// nfc read type
-private enum ScanType {
-    case getPublicKey
-    case verify
-    case getCount
-    case sign
+public protocol ReaderNFCReadable: class {
+    func didDetectNFC()
+    func didNFCErrorOccurred(description: String?)
 }
 
 public class CardReaderManager: NSObject {
-    
-    public static let shared = CardReaderManager()
-    private override init() {
-        
-    }
-    
-    /// get public key callback - return public key  hex string
-    public typealias PublicKeyClosure = ((String) -> ())?
+    /// get public key callback - return public key  data
+    public typealias PublicKeyClosure = ((Data) -> ())?
     /// verify public key callback - return success if verify passed
     public typealias VerifyClosure = ((Bool) -> ())?
     /// signature count callback - return int type
@@ -51,10 +42,11 @@ public class CardReaderManager: NSObject {
     /// sign tx callback - return r, s
     public typealias SignTxHashClosure = ((Data, Data) -> ())?
     
+    public weak var delegate: ReaderNFCReadable?
+    
     // NFC
     private var nfcTagReaderSession: NFCTagReaderSession?
     private var nfcTag: NFCISO7816Tag?
-    private var scanType = ScanType.getPublicKey
     /// NFC detect callback - private use
     private var nfcDetectClosure: (() -> ())?
     private var publicKeyClosure: PublicKeyClosure
@@ -77,28 +69,32 @@ public class CardReaderManager: NSObject {
 // MARK: - Public
 extension CardReaderManager {
     
+    public func activateNFC() {
+        nfcTagReaderSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
+        nfcTagReaderSession?.begin()
+    }
+    
+    public func invlideNFC() {
+        nfcTagReaderSession?.invalidate()
+        nfcTagReaderSession = nil
+    }
+    
     /// Get public key
     public func readBlockchainPublicKey(closure: PublicKeyClosure) {
-        scanNFC(type: .getPublicKey)
-        nfcDetectClosure = { [weak self] in
-            self?._getPublicKey(closure: closure)
-        }
+        guard nfcTagReaderSession != nil else { return }
+        _getPublicKey(closure: closure)
     }
     
     /// Verify public key
     public func verifyBlockchainPublicKey(closure: VerifyClosure) {
-        scanNFC(type: .verify)
-        nfcDetectClosure = { [weak self] in
-            self?._verifyPublicKey(closure: closure)
-        }
+        guard nfcTagReaderSession != nil else { return }
+        _verifyPublicKey(closure: closure)
     }
     
     /// Get signature count
     public func readTransactionSignCounter(closure: CountClosure) {
-        scanNFC(type: .getCount)
-        nfcDetectClosure = { [weak self] in
-            self?._getCount(closure: closure)
-        }
+        guard nfcTagReaderSession != nil else { return }
+        _getCount(closure: closure)
     }
     
     /// Get ethereum raw transaction before send raw transaction
@@ -154,33 +150,11 @@ extension CardReaderManager {
                     return
                 }
                 closure?(rData, sData)
-                
-                print("r: \(rData.toHexString()), s: \(sData.toHexString())")
-//                transaction.populateSignature(withR: rData, s: sData, address: Address(string: address))
-//                let serialize = transaction.serialize()
-//                let rawtx = BTCHexFromData(serialize).addHexPrefix()
-//
-//                let rHex = transaction.signature?.r.toHexString().addHexPrefix() ?? ""
-//                let sHex = transaction.signature?.s.toHexString().addHexPrefix() ?? ""
-//                var v = UInt8(transaction.signature?.v ?? 0)
-//                if chainId > 0 {
-//                    v = v + chainId * 2 + 35
-//                } else {
-//                    v = v + 27
-//                }
-                
-//                closure?(rHex, sHex, v, rawtx)
-                if self.scanType == .sign {
-                    self.nfcTagReaderSession?.invalidate()
-                    self.nfcTagReaderSession = nil
-                }
             }
         }
         
-        scanNFC(type: .sign)
-        nfcDetectClosure = {
-            signEthRawTx(hashData: hashData, closure: closure)
-        }
+        guard nfcTagReaderSession != nil else { return }
+        signEthRawTx(hashData: hashData, closure: closure)
     }
 }
 
@@ -192,8 +166,7 @@ extension CardReaderManager: NFCTagReaderSessionDelegate {
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        nfcTagReaderSession?.invalidate()
-        nfcTagReaderSession = nil
+        invlideNFC()
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
@@ -205,6 +178,7 @@ extension CardReaderManager: NFCTagReaderSessionDelegate {
                     guard !tag7816.initialSelectedAID.isEmpty else { return }
                     self?.nfcTag = tag7816
                     self?.nfcDetectClosure?()
+                    self?.delegate?.didDetectNFC()
                 }
             default: ()
             }
@@ -215,49 +189,28 @@ extension CardReaderManager: NFCTagReaderSessionDelegate {
 // MARK: - Private
 extension CardReaderManager {
     
-    /// start NFC to read tag
-    private func scanNFC(type: ScanType) {
-        self.scanType = type
-        nfcTagReaderSession = NFCTagReaderSession(pollingOption: [.iso14443], delegate: self)
-        //        nfcTagReaderSession?.alertMessage = "Place the device on the innercover of the passport"
-        nfcTagReaderSession?.begin()
-    }
-    
     private func _getPublicKey(closure: PublicKeyClosure) {
         sendApdu(apdu: .publicKey)
-        publicKeyClosure = { [weak self] in
+        publicKeyClosure = {
             closure?($0)
-            if self?.scanType == .getPublicKey {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
         }
     }
     
     private func _verifyPublicKey(closure: VerifyClosure) {
         sendApdu(apdu: .verifyBlockchain)
-        verifyClosure = { [weak self] in
+        verifyClosure = {
             closure?($0)
-            if self?.scanType == .verify {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
         }
     }
     
     private func _getCount(closure: CountClosure) {
         sendApdu(apdu: .cardStatus)
-        countClosure = { [weak self] in
+        countClosure = {
             closure?($0)
-            if self?.scanType == .getCount {
-                self?.nfcTagReaderSession?.invalidate()
-                self?.nfcTagReaderSession = nil
-            }
         }
     }
     
     private func sendApdu(apdu: Apdu) {
-        self.apdu = apdu
         
         var apduData: Data?
         switch apdu {
@@ -272,17 +225,21 @@ extension CardReaderManager {
         guard let data = apduData else { return }
         guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
         guard let nfcTag = self.nfcTag else { return }
-        nfcTag.sendCommand(apdu: apdu7816) { (data, _, _, error) in
-            guard error == nil else { return }
-            switch self.apdu {
+        nfcTag.sendCommand(apdu: apdu7816) { [weak self] (data, _, _, error) in
+            guard error == nil else {
+                self?.invlideNFC()
+                self?.delegate?.didNFCErrorOccurred(description: error?.localizedDescription)
+                return
+            }
+            switch apdu {
             case .publicKey:
-                self.savePublicKey(rawApdu: data)
+                self?.savePublicKey(rawApdu: data)
             case .cardStatus:
-                self.saveCardStatus(rawApdu: data)
+                self?.saveCardStatus(rawApdu: data)
             case .verifyBlockchain:
-                self.verifyBlockchain(rawApdu: data)
+                self?.verifyBlockchain(rawApdu: data)
             case .certificate:
-                self.judgeCertificate(rawApdu: data)
+                self?.judgeCertificate(rawApdu: data)
             default: break
             }
         }
@@ -315,7 +272,7 @@ extension CardReaderManager {
         let tag = Data(hex: TagBlockChainPublicKey)
         guard let publicKey = tv[tag] else { return }
         self.publicKey = publicKey
-        publicKeyClosure?(publicKey.toHexString().addHexPrefix())
+        publicKeyClosure?(publicKey)
     }
     
     /// Save card safe status for global use
@@ -353,9 +310,13 @@ extension CardReaderManager {
         let apduStr = apdu.value + serialData.toHexString()
         let data = Data(hex: apduStr)
         guard let apdu7816 = NFCISO7816APDU(data: data) else { return }
-        nfcTag?.sendCommand(apdu: apdu7816) { (data, _, _, error) in
-            guard error == nil else { return }
-            self.signTxHash(rawApdu: data)
+        nfcTag?.sendCommand(apdu: apdu7816) { [weak self] (data, _, _, error) in
+            guard error == nil else {
+                self?.invlideNFC()
+                self?.delegate?.didNFCErrorOccurred(description: error?.localizedDescription)
+                return
+            }
+            self?.signTxHash(rawApdu: data)
         }
     }
     

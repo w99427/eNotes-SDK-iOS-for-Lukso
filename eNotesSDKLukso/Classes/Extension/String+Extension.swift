@@ -47,7 +47,7 @@ extension String {
     }
 }
 
-extension String {
+public extension String {
     
     func addHexPrefix() -> String {
         if !self.hasPrefix("0x") {
