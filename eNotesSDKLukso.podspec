@@ -24,7 +24,7 @@ s.source           = { :git => 'https://github.com/Smiacter/eNotesSDKLukso.git',
 s.ios.deployment_target = '13.0'
 s.swift_version = '4.2'
 
-s.source_files = 'eNotesSDKLukso/Classes/**/*.{swift}', 'eNotesSDKLukso/Classes/Dependency/ACSBluetooth/*.{h,m}', 'eNotesSDKLukso/Classes/Dependency/CoreBitcoin/**/*.{h,m}', 'eNotesSDKLukso/Classes/Helper/BtcRawTx/*.{h,m}'
+s.source_files = 'eNotesSDKLukso/Classes/**/*.{swift}', 'eNotesSDKLukso/Classes/Dependency/CoreBitcoin/**/*.{h,m}'
 s.vendored_libraries  = 'eNotesSDKLukso/Classes/Dependency/**/*.a'
 s.vendored_frameworks = 'eNotesSDKLukso/Classes/Dependency/**/*.framework'
 s.frameworks = 'AVFoundation'
