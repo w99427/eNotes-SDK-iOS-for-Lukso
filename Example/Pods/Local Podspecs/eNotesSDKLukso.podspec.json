@@ -21,9 +21,7 @@
   "swift_versions": "4.2",
   "source_files": [
     "eNotesSDKLukso/Classes/**/*.{swift}",
-    "eNotesSDKLukso/Classes/Dependency/ACSBluetooth/*.{h,m}",
-    "eNotesSDKLukso/Classes/Dependency/CoreBitcoin/**/*.{h,m}",
-    "eNotesSDKLukso/Classes/Helper/BtcRawTx/*.{h,m}"
+    "eNotesSDKLukso/Classes/Dependency/CoreBitcoin/**/*.{h,m}"
   ],
   "vendored_libraries": "eNotesSDKLukso/Classes/Dependency/**/*.a",
   "vendored_frameworks": "eNotesSDKLukso/Classes/Dependency/**/*.framework",
