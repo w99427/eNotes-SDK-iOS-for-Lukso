@@ -55,4 +55,4 @@ To run the example project, download the code and replace your team configure, p
 
 ## License
 
-eNotesSDKLukso is available under the MIT license. See the LICENSE file for more info.
+This project is available under the MIT license. See the LICENSE file for more info.
