@@ -1,13 +1,4 @@
-# eNotesSDKLukso
-
-[![CI Status](https://img.shields.io/travis/Smiacter/eNotesSDKLukso.svg?style=flat)](https://travis-ci.org/Smiacter/eNotesSDKLukso)
-[![Version](https://img.shields.io/cocoapods/v/eNotesSDKLukso.svg?style=flat)](https://cocoapods.org/pods/eNotesSDKLukso)
-[![License](https://img.shields.io/cocoapods/l/eNotesSDKLukso.svg?style=flat)](https://cocoapods.org/pods/eNotesSDKLukso)
-[![Platform](https://img.shields.io/cocoapods/p/eNotesSDKLukso.svg?style=flat)](https://cocoapods.org/pods/eNotesSDKLukso)
-
-## Example
-
-To run the example project, download the code and replace your team configure, you must open NFC support
+# eNotes iOS SDK for LUKSO
 
 ## Requirements
 
@@ -54,9 +45,13 @@ func didDetectNFC() {
 }
 ```
 
+## Example
+
+To run the example project, download the code and replace your team configure, please notice that NFC support must be opened.
+
 ## Author
 
-eNotes
+[eNotes.io](https://enotes.io)
 
 ## License
 
